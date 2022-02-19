@@ -60,7 +60,7 @@ bool q_insert_head(struct list_head *head, char *s)
 
     el->value = malloc(sizeof(char) * (strlen(s) + 1));
     if (!el->value) {
-        free(el->value);
+        // free(el->value);
         free(el);
         return false;
     }
@@ -189,6 +189,13 @@ int q_size(struct list_head *head)
     return len;
 }
 
+#define del_node(node)                                       \
+    {                                                        \
+        element_t *el = container_of(node, element_t, list); \
+        list_del(node);                                      \
+        q_release_element(el);                               \
+    }
+
 /*
  * Delete the middle node in list.
  * The middle node of a linked list of size n is the
@@ -200,8 +207,35 @@ int q_size(struct list_head *head)
 bool q_delete_mid(struct list_head *head)
 {
     // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+
+    if (!head)
+        return false;
+
+    // hp: head pointer, tp: tail pointer
+    // squeeze to find the middle-node
+    struct list_head *hp = head->next;
+    struct list_head *tp = head->prev;
+    int hindex = 0, tindex = q_size(head) - 1;  // O(n)
+
+    if (tindex < 0)
+        return false;
+
+    for (; hindex < tindex; hindex++, tindex--) {
+        hp = hp->next;
+        tp = tp->prev;
+    }
+
+    /*
+     * odd nodes: head -> ... -> hp == tp -> ...
+     * even nodes: head -> ... -> tp -> hp -> ...
+     * thus delete "hp"
+     */
+    del_node(hp);  // delete middle node
+
     return true;
 }
+
+#define get_value(node) container_of(node, element_t, list)->value
 
 /*
  * Delete all nodes that have duplicate string,
@@ -215,6 +249,29 @@ bool q_delete_mid(struct list_head *head)
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+
+    if (!head)
+        return false;
+
+    if (!head->next)
+        return true;
+
+    struct list_head *p = head->next;
+
+    for (; p->next && p->next != head;) {
+        if (strcmp(get_value(p), get_value(p->next)) == 0) {
+            struct list_head *np = p->next;
+            char *str = strdup(get_value(np));
+            for (; np->next && strcmp(str, get_value(np->next)) == 0;) {
+                np = np->next;
+                del_node(np->prev);
+            }
+            del_node(np);
+        }
+        p = p->next;
+        del_node(p->prev);
+    }
+
     return true;
 }
 
