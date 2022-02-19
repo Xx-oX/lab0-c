@@ -208,7 +208,7 @@ bool q_delete_mid(struct list_head *head)
 {
     // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
 
-    if (!head)
+    if (!head || list_empty(head))
         return false;
 
     // hp: head pointer, tp: tail pointer
@@ -216,9 +216,6 @@ bool q_delete_mid(struct list_head *head)
     struct list_head *hp = head->next;
     struct list_head *tp = head->prev;
     int hindex = 0, tindex = q_size(head) - 1;  // O(n)
-
-    if (tindex < 0)
-        return false;
 
     for (; hindex < tindex; hindex++, tindex--) {
         hp = hp->next;
@@ -253,16 +250,16 @@ bool q_delete_dup(struct list_head *head)
     if (!head)
         return false;
 
-    if (!head->next)
+    if (list_empty(head))
         return true;
 
     struct list_head *p = head->next;
 
-    for (; p->next && p->next != head;) {
+    for (; p->next != head;) {
         if (strcmp(get_value(p), get_value(p->next)) == 0) {
             struct list_head *np = p->next;
             char *str = strdup(get_value(np));
-            for (; np->next && strcmp(str, get_value(np->next)) == 0;) {
+            for (; np->next != head && strcmp(str, get_value(np->next)) == 0;) {
                 np = np->next;
                 del_node(np->prev);
             }
@@ -276,12 +273,57 @@ bool q_delete_dup(struct list_head *head)
 }
 
 /*
+ * head -> ... -> node_a -> node_b -> ...
+ */
+#define swap_node_adjacent(node_a, node_b)     \
+    {                                          \
+        struct list_head *prev = node_a->prev; \
+        struct list_head *next = node_b->next; \
+        prev->next = node_b;                   \
+        node_b->prev = prev;                   \
+        node_b->next = node_a;                 \
+        node_a->prev = node_b;                 \
+        node_a->next = next;                   \
+        next->prev = node_a;                   \
+    }
+
+/*
  * Attempt to swap every two adjacent nodes.
  */
 void q_swap(struct list_head *head)
 {
     // https://leetcode.com/problems/swap-nodes-in-pairs/
+
+    if (!head || list_empty(head))
+        return;
+
+    struct list_head *p = head->next;
+
+    for (; p != head && p->next != head; p = p->next) {
+        swap_node_adjacent(p, p->next);
+    }
 }
+
+/*
+ * before: head -> ... -> p -> a -> c -> ... -> d -> b -> n -> ...
+ * result: head -> ... -> p -> b -> c -> ... -> d -> a -> n -> ...
+ * TODO: debug
+ */
+#define swap_node_nonadjacent(a, b)    \
+    {                                  \
+        struct list_head *p = a->prev; \
+        struct list_head *c = a->next; \
+        struct list_head *d = b->prev; \
+        struct list_head *n = b->next; \
+        p->next = b;                   \
+        b->prev = p;                   \
+        b->next = c;                   \
+        c->prev = b;                   \
+        d->next = a;                   \
+        a->prev = d;                   \
+        a->next = n;                   \
+        n->prev = a;                   \
+    }
 
 /*
  * Reverse elements in queue
@@ -290,7 +332,25 @@ void q_swap(struct list_head *head)
  * (e.g., by calling q_insert_head, q_insert_tail, or q_remove_head).
  * It should rearrange the existing ones.
  */
-void q_reverse(struct list_head *head) {}
+void q_reverse(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return;
+
+    // TODO: debug
+    // hp: head pointer, tp: tail pointer
+    struct list_head *hp = head->next;
+    struct list_head *tp = head->prev;
+    int hindex = 0, tindex = q_size(head) - 1;  // O(n)
+
+    for (; hindex < tindex; hindex++, tindex--) {
+        struct list_head *a = hp;
+        struct list_head *b = tp;
+        hp = hp->next;
+        tp = tp->prev;
+        swap_node_nonadjacent(a, b);
+    }
+}
 
 /*
  * Sort elements of queue in ascending order
