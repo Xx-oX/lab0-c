@@ -189,6 +189,10 @@ int q_size(struct list_head *head)
     return len;
 }
 
+/*
+ * Delete a node.
+ * i.e. remove and release the corresponding element
+ */
 #define del_node(node)                                       \
     {                                                        \
         element_t *el = container_of(node, element_t, list); \
@@ -232,6 +236,9 @@ bool q_delete_mid(struct list_head *head)
     return true;
 }
 
+/*
+ * Get the value of corresponding element of node.
+ */
 #define get_value(node) container_of(node, element_t, list)->value
 
 /*
@@ -255,7 +262,7 @@ bool q_delete_dup(struct list_head *head)
 
     struct list_head *p = head->next;
 
-    for (; p->next != head;) {
+    for (; p != head && p->next != head;) {
         if (strcmp(get_value(p), get_value(p->next)) == 0) {
             struct list_head *np = p->next;
             char *str = strdup(get_value(np));
@@ -264,15 +271,19 @@ bool q_delete_dup(struct list_head *head)
                 del_node(np->prev);
             }
             del_node(np);
+            free(str);  // release momery allocated by strdup
+            p = p->next;
+            del_node(p->prev);
+        } else {
+            p = p->next;
         }
-        p = p->next;
-        del_node(p->prev);
     }
 
     return true;
 }
 
 /*
+ * Swap two adjacent nodes.
  * head -> ... -> node_a -> node_b -> ...
  */
 #define swap_node_adjacent(node_a, node_b)     \
@@ -305,6 +316,7 @@ void q_swap(struct list_head *head)
 }
 
 /*
+ * Swap two nonadjacent nodes.
  * before: head -> ... -> p -> a -> c -> ... -> d -> b -> n -> ...
  * result: head -> ... -> p -> b -> c -> ... -> d -> a -> n -> ...
  * TODO: debug
@@ -337,19 +349,21 @@ void q_reverse(struct list_head *head)
     if (!head || list_empty(head))
         return;
 
+    // swap_node_nonadjacent(head->next, head->prev);
+
     // TODO: debug
     // hp: head pointer, tp: tail pointer
-    struct list_head *hp = head->next;
-    struct list_head *tp = head->prev;
-    int hindex = 0, tindex = q_size(head) - 1;  // O(n)
+    // struct list_head *hp = head->next;
+    // struct list_head *tp = head->prev;
+    // int hindex = 0, tindex = q_size(head) - 1;  // O(n)
 
-    for (; hindex < tindex; hindex++, tindex--) {
-        struct list_head *a = hp;
-        struct list_head *b = tp;
-        hp = hp->next;
-        tp = tp->prev;
-        swap_node_nonadjacent(a, b);
-    }
+    // for (; hindex < tindex; hindex++, tindex--) {
+    //     struct list_head *a = hp;
+    //     struct list_head *b = tp;
+    //     hp = hp->next;
+    //     tp = tp->prev;
+    //     swap_node_nonadjacent(a, b);
+    // }
 }
 
 /*
