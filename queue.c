@@ -212,23 +212,22 @@ bool q_delete_mid(struct list_head *head)
     if (!head || list_empty(head))
         return false;
 
-    // hp: head pointer, tp: tail pointer
     // squeeze to find the middle-node
-    struct list_head *hp = head->next;
-    struct list_head *tp = head->prev;
+    struct list_head *p = head->next;
     int hindex = 0, tindex = q_size(head) - 1;  // O(n)
 
-    for (; hindex < tindex; hindex++, tindex--) {
-        hp = hp->next;
-        tp = tp->prev;
-    }
+    for (; hindex < tindex; hindex++, tindex--, p = p->next)
+        ;
 
     /*
+     * hp: go from head to tail
+     * tp: go from tail to head
      * odd nodes: head -> ... -> hp == tp -> ...
      * even nodes: head -> ... -> tp -> hp -> ...
      * thus delete "hp"
+     * => simplify to one pointer p
      */
-    del_node(hp);  // delete middle node
+    del_node(p);  // delete middle node
 
     return true;
 }
@@ -353,6 +352,130 @@ void q_reverse(struct list_head *head)
 }
 
 /*
+ * Merge r and l into a circular doubly-linked list by ascending order.
+ */
+// #define MERGE_SORT_DEBUG
+
+struct list_head *merge(struct list_head *r, struct list_head *l)
+{
+    /*
+     * flatten
+     * NULL -> r -> ... -> rt -> NULL
+     * NULL -> l -> ... -> lt -> NULL
+     */
+    r->prev->next = NULL;  // rt->next = NULL
+    r->prev = NULL;
+    l->prev->next = NULL;  // lt->next = NULL
+    l->prev = NULL;
+
+#ifdef MERGE_SORT_DEBUG
+    printf("\nmerge! ");
+    struct list_head *a;
+    for (a = r; a != NULL; a = a->next)
+        printf("%s ", get_value(a));
+    printf("<> ");
+
+    for (a = l; a != NULL; a = a->next)
+        printf("%s ", get_value(a));
+    printf("\n-----\n");
+#endif
+
+    // decide head
+    struct list_head *rp = r, *lp = l;
+    struct list_head **cmp;
+    cmp = (get_value(rp)[0] < get_value(lp)[0]) ? &rp : &lp;
+    struct list_head *h = *cmp;
+    struct list_head *tail = h;
+    *cmp = (*cmp)->next;
+
+#ifdef MERGE_SORT_DEBUG
+    printf("head: %s\n", get_value(h));
+    int de = 0;
+#endif
+
+    for (cmp = NULL; rp && lp; *cmp = (*cmp)->next, tail = tail->next) {
+        cmp = (get_value(rp)[0] < get_value(lp)[0]) ? &rp : &lp;
+        tail->next = *cmp;
+        (*cmp)->prev = tail;
+#ifdef MERGE_SORT_DEBUG
+        printf("%d *cmp = %s new tail = %s\n", ++de, get_value(*cmp),
+               get_value(tail->next));
+#endif
+    }
+
+    // connect the last(rest) node
+    cmp = rp ? &rp : &lp;
+    for (; *cmp; *cmp = (*cmp)->next, tail = tail->next) {
+        tail->next = *cmp;
+        tail->next->prev = tail;
+#ifdef MERGE_SORT_DEBUG
+        printf("add %s\n", get_value(*cmp));
+#endif
+    }
+
+    // circulate the list
+    tail->next = h;
+    h->prev = tail;
+
+#ifdef MERGE_SORT_DEBUG
+    printf("ret: ");
+    for (a = h; a != h->prev; a = a->next)
+        printf("%s ", get_value(a));
+    printf("%s\n-----\n\n", get_value(a));
+#endif
+
+    return h;
+}
+
+struct list_head *merge_sort(struct list_head *h)
+{
+    // single
+    if (h->next == h)
+        return h;
+
+    int hindex = 0, tindex = 0;
+    struct list_head *p;
+    for (p = h->next; p != h; tindex++, p = p->next)
+        ;
+
+    // find middle node
+    p = h;
+    for (; hindex < tindex; hindex++, tindex--, p = p->next)
+        ;
+
+    /*
+     * Split into two circular-doubly-linked list.
+     * before: -> h -> ... -> ht -> p -> ... -> pt ->
+     * result: -> h -> ... -> ht -> , -> p -> ... -> pt ->
+     */
+
+    struct list_head *ht = p->prev;
+    struct list_head *pt = h->prev;
+    ht->next = h;
+    h->prev = ht;
+    pt->next = p;
+    p->prev = pt;
+
+#ifdef MERGE_SORT_DEBUG
+    struct list_head *a;
+    printf("h: ");
+    for (a = h; a != h->prev; a = a->next)
+        printf("%s ", get_value(a));
+    printf("%s\np: ", get_value(a));
+    for (a = p; a != p->prev; a = a->next)
+        printf("%s ", get_value(a));
+    printf("%s\n", get_value(a));
+#endif
+
+    // recurision
+    h = merge_sort(h);
+    p = merge_sort(p);
+
+    // merge into one list
+    return merge(h, p);
+}
+
+/*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
@@ -361,4 +484,24 @@ void q_sort(struct list_head *head)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
+
+    // dehead, and remake the circle
+    struct list_head *p = head->next;
+    p->prev = head->prev;
+    head->prev->next = p;
+
+    p = merge_sort(p);
+
+    // conect result p to head
+    head->next = p;
+    head->prev = p->prev;
+    p->prev->next = head;
+    p->prev = head;
+
+#ifdef MERGE_SORT_DEBUG
+    element_t *e;
+    list_for_each_entry (e, head, list)
+        printf("%s ", e->value);
+    printf("\n");
+#endif
 }
