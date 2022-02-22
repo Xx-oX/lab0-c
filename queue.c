@@ -98,11 +98,6 @@ bool q_insert_tail(struct list_head *head, char *s)
 }
 
 /*
- * Get smaller number between two integer without checking.
- */
-#define min(x, y) (x) < (y) ? (x) : (y)
-
-/*
  * Attempt to remove element from head of queue.
  * Return target element.
  * Return NULL if queue is NULL or empty.
@@ -126,8 +121,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *el = list_entry(node, element_t, list);
-
-    int len = min(strlen(el->value), bufsize - 1);
+    size_t len = strnlen(el->value, bufsize - 1);
     memcpy(sp, el->value, len);
     *(sp + len * sizeof(char)) = '\0';
 
@@ -150,8 +144,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *el = list_entry(node, element_t, list);
-
-    int len = min(strlen(el->value), bufsize - 1);
+    size_t len = strnlen(el->value, bufsize - 1);
     memcpy(sp, el->value, len);
     *(sp + len * sizeof(char)) = '\0';
 
@@ -383,7 +376,7 @@ struct list_head *merge(struct list_head *r, struct list_head *l)
     // decide head
     struct list_head *rp = r, *lp = l;
     struct list_head **cmp;
-    cmp = (get_value(rp)[0] < get_value(lp)[0]) ? &rp : &lp;
+    cmp = (strcmp(get_value(rp), get_value(lp)) < 0) ? &rp : &lp;
     struct list_head *h = *cmp;
     struct list_head *tail = h;
     *cmp = (*cmp)->next;
@@ -394,7 +387,7 @@ struct list_head *merge(struct list_head *r, struct list_head *l)
 #endif
 
     for (cmp = NULL; rp && lp; *cmp = (*cmp)->next, tail = tail->next) {
-        cmp = (get_value(rp)[0] < get_value(lp)[0]) ? &rp : &lp;
+        cmp = (strcmp(get_value(rp), get_value(lp)) < 0) ? &rp : &lp;
         tail->next = *cmp;
         (*cmp)->prev = tail;
 #ifdef MERGE_SORT_DEBUG
