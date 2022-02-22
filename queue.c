@@ -85,12 +85,14 @@ bool q_insert_tail(struct list_head *head, char *s)
     if (!el)
         return false;
 
-    el->value = malloc(sizeof(char) * (strlen(s) + 1));
+    // el->value = malloc(sizeof(char) * (strlen(s) + 1));
+    el->value = strdup(s);
     if (!el->value) {
-        q_release_element(el);
+        free(el);
+        // q_release_element(el);
         return false;
     }
-    memcpy(el->value, s, strlen(s) + 1);
+    // memcpy(el->value, s, strlen(s) + 1);
 
     list_add_tail(&el->list, head);
 
