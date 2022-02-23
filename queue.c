@@ -428,22 +428,19 @@ struct list_head *merge_sort(struct list_head *h)
     if (h->next == h)
         return h;
 
-    int hindex = 0, tindex = 0;
-    struct list_head *p;
-    for (p = h->next; p != h; tindex++, p = p->next)
+    // Floyd's Algorithm, a.k.a. Tortoise and Hare Algorithm
+    struct list_head *hare = h->next, *tortoise = h->next;
+    for (; hare->next != h && hare->next->next != h;
+         tortoise = tortoise->next, hare = hare->next->next)
         ;
 
-    // find middle node
-    p = h;
-    for (; hindex < tindex; hindex++, tindex--, p = p->next)
-        ;
+    struct list_head *p = tortoise;
 
     /*
      * Split into two circular-doubly-linked list.
      * before: -> h -> ... -> ht -> p -> ... -> pt ->
      * result: -> h -> ... -> ht -> , -> p -> ... -> pt ->
      */
-
     struct list_head *ht = p->prev;
     struct list_head *pt = h->prev;
     ht->next = h;
