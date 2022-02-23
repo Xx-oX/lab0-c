@@ -347,20 +347,30 @@ void q_reverse(struct list_head *head)
 }
 
 /*
+ * list_splice() but without 'head'
+ * Concatenate b after a
+ */
+void splice(struct list_head *a, struct list_head *b)
+{
+    struct list_head *a_tail = a->prev;
+    struct list_head *b_tail = b->prev;
+
+    a_tail->next = b;
+    b->prev = a_tail;
+    b_tail->next = a;
+    a->prev = b_tail;
+}
+
+/*
  * Merge r and l into a circular doubly-linked list by ascending order.
  */
 // #define MERGE_SORT_DEBUG
-
 struct list_head *merge(struct list_head *r, struct list_head *l)
 {
     // for unbalanced case like 1, ..., 1 vs 2, ..., 2
     if (strcmp(get_value(r->prev), get_value(l)) < 0 ||
         strcmp(get_value(r->prev), get_value(l)) == 0) {
-        r->prev->next = l;
-        l->prev->next = r;
-        struct list_head *tmp = r->prev;
-        r->prev = l->prev;
-        l->prev = tmp;
+        splice(r, l);
 #ifdef MERGE_SORT_DEBUG
         struct list_head *a;
         printf("sr: ");
@@ -370,11 +380,7 @@ struct list_head *merge(struct list_head *r, struct list_head *l)
 #endif
         return r;
     } else if (strcmp(get_value(l->prev), get_value(r)) < 0) {
-        l->prev->next = r;
-        r->prev->next = l;
-        struct list_head *tmp = l->prev;
-        l->prev = r->prev;
-        r->prev = tmp;
+        splice(l, r);
 #ifdef MERGE_SORT_DEBUG
         struct list_head *a;
         printf("sl: ");
