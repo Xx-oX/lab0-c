@@ -353,6 +353,38 @@ void q_reverse(struct list_head *head)
 
 struct list_head *merge(struct list_head *r, struct list_head *l)
 {
+    // for unbalanced case like 1, ..., 1 vs 2, ..., 2
+    if (strcmp(get_value(r->prev), get_value(l)) < 0 ||
+        strcmp(get_value(r->prev), get_value(l)) == 0) {
+        r->prev->next = l;
+        l->prev->next = r;
+        struct list_head *tmp = r->prev;
+        r->prev = l->prev;
+        l->prev = tmp;
+#ifdef MERGE_SORT_DEBUG
+        struct list_head *a;
+        printf("sr: ");
+        for (a = r; a != r->prev; a = a->next)
+            printf("%s ", get_value(a));
+        printf("%s\n", get_value(a));
+#endif
+        return r;
+    } else if (strcmp(get_value(l->prev), get_value(r)) < 0) {
+        l->prev->next = r;
+        r->prev->next = l;
+        struct list_head *tmp = l->prev;
+        l->prev = r->prev;
+        r->prev = tmp;
+#ifdef MERGE_SORT_DEBUG
+        struct list_head *a;
+        printf("sl: ");
+        for (a = l; a != l->prev; a = a->next)
+            printf("%s ", get_value(a));
+        printf("%s\n", get_value(a));
+#endif
+        return l;
+    }
+
     /*
      * flatten
      * NULL -> r -> ... -> rt -> NULL
