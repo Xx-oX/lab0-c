@@ -281,7 +281,7 @@ bool q_delete_dup(struct list_head *head)
  * result: head -> ... -> m -> b -> c -> ... -> d -> a -> n -> ...
  */
 
-void swap_node(struct list_head *a, struct list_head *b)
+static inline void swap_node(struct list_head *a, struct list_head *b)
 {
     struct list_head *m = a->prev;
     struct list_head *n = b->next;
@@ -350,7 +350,7 @@ void q_reverse(struct list_head *head)
  * list_splice() but without 'head'
  * Concatenate b after a
  */
-void splice(struct list_head *a, struct list_head *b)
+static inline void splice(struct list_head *a, struct list_head *b)
 {
     struct list_head *a_tail = a->prev;
     struct list_head *b_tail = b->prev;
